@@ -93,7 +93,7 @@ local function addShadow(parent)
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "WindowShadow"
     shadow.BackgroundTransparency = 1
-    shadow.Image = "rbxassetid://5028857472" -- soft drop shadow
+    shadow.Image = "rbxassetid://5028857472"
     shadow.ImageTransparency = 0.25
     shadow.ScaleType = Enum.ScaleType.Slice
     shadow.SliceCenter = Rect.new(24, 24, 276, 276)
@@ -104,7 +104,7 @@ local function addShadow(parent)
     return shadow
 end
 
-local function newText(parent, text, size, color, bold)
+local function newText(parent, text, size, color)
     local t = Instance.new("TextLabel")
     t.BackgroundTransparency = 1
     t.Text = text
@@ -114,19 +114,6 @@ local function newText(parent, text, size, color, bold)
     t.TextXAlignment = Enum.TextXAlignment.Left
     t.Parent = parent
     return t
-end
-
-local function newButtonText(parent, text, size, color)
-    local b = Instance.new("TextButton")
-    b.BackgroundTransparency = 1
-    b.Text = text
-    b.Font = Enum.Font.Gotham
-    b.TextSize = size
-    b.TextColor3 = color
-    b.TextXAlignment = Enum.TextXAlignment.Left
-    b.AutoButtonColor = false
-    b.Parent = parent
-    return b
 end
 
 local Library = {}
@@ -156,8 +143,8 @@ function Library:CreateWindow(title, options)
 
     local root = Instance.new("Frame")
     root.Name = "Window"
-    root.Size = UDim2.fromOffset((options and options.Size and options.Size.X) or 600, (options and options.Size and options.Size.Y) or 440)
-    root.Position = UDim2.fromScale(0.3, 0.25)
+    root.Size = UDim2.fromOffset((options and options.Size and options.Size.X) or 600, (options and options.Size and options.Size.Y) or 460)
+    root.Position = UDim2.fromScale(0.3, 0.24)
     root.BackgroundColor3 = theme.Background
     root.BorderSizePixel = 0
     root.ZIndex = 1
@@ -170,13 +157,12 @@ function Library:CreateWindow(title, options)
     titleBar.Name = "TitleBar"
     titleBar.BackgroundColor3 = theme.Elevated
     titleBar.BorderSizePixel = 0
-    titleBar.Size = UDim2.new(1, 0, 0, 36)
+    titleBar.Size = UDim2.new(1, 0, 0, 52)
     titleBar.Parent = root
     applyCorner(titleBar, 12)
     addStroke(titleBar, theme.Stroke, 1)
-    addPadding(titleBar, 8)
 
-    -- Traffic lights container (left)
+    -- Traffic lights (left)
     local traffic = Instance.new("Frame")
     traffic.Name = "TrafficLights"
     traffic.BackgroundTransparency = 1
@@ -184,12 +170,12 @@ function Library:CreateWindow(title, options)
     traffic.Position = UDim2.fromOffset(10, 8)
     traffic.Parent = titleBar
 
-    local layout = Instance.new("UIListLayout")
-    layout.FillDirection = Enum.FillDirection.Horizontal
-    layout.Padding = UDim.new(0, 8)
-    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.Parent = traffic
+    local tLayout = Instance.new("UIListLayout")
+    tLayout.FillDirection = Enum.FillDirection.Horizontal
+    tLayout.Padding = UDim.new(0, 8)
+    tLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    tLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    tLayout.Parent = traffic
 
     local function makeLight(color)
         local btn = Instance.new("TextButton")
@@ -201,12 +187,6 @@ function Library:CreateWindow(title, options)
         btn.Parent = traffic
         applyCorner(btn, 7)
         addStroke(btn, Color3.fromRGB(0,0,0), 0.5).Transparency = 0.7
-        btn.MouseEnter:Connect(function()
-            tween(btn, 0.12, {BackgroundTransparency = 0}):Play()
-        end)
-        btn.MouseLeave:Connect(function()
-            tween(btn, 0.12, {BackgroundTransparency = 0}):Play()
-        end)
         return btn
     end
 
@@ -215,32 +195,51 @@ function Library:CreateWindow(title, options)
     local zoomBtn = makeLight(theme.TrafficGreen)
 
     -- Centered title
-    local titleText = newText(titleBar, title or "Window", 15, theme.Text, true)
-    titleText.Size = UDim2.new(1, -180, 1, 0)
-    titleText.Position = UDim2.fromOffset(90, 0)
+    local titleText = newText(titleBar, title or "Window", 15, theme.Text)
+    titleText.Size = UDim2.new(1, -200, 0, 18)
+    titleText.Position = UDim2.new(0.5, 0, 0, 6)
+    titleText.AnchorPoint = Vector2.new(0.5, 0)
     titleText.TextXAlignment = Enum.TextXAlignment.Center
 
-    local tabBar = Instance.new("Frame")
-    tabBar.Name = "TabBar"
-    tabBar.BackgroundColor3 = theme.Background
-    tabBar.BorderSizePixel = 0
-    tabBar.Size = UDim2.new(1, 0, 0, 36)
-    tabBar.Position = UDim2.fromOffset(0, 36)
-    tabBar.Parent = root
-    addStroke(tabBar, theme.Stroke, 1)
+    -- Segmented tabs centered in title bar
+    local segWrap = Instance.new("Frame")
+    segWrap.Name = "SegmentedTabs"
+    segWrap.BackgroundColor3 = theme.Background
+    segWrap.BackgroundTransparency = 0.2
+    segWrap.AnchorPoint = Vector2.new(0.5, 1)
+    segWrap.Position = UDim2.new(0.5, 0, 1, -6)
+    segWrap.Size = UDim2.fromOffset(0, 28)
+    segWrap.AutomaticSize = Enum.AutomaticSize.X
+    segWrap.Parent = titleBar
+    applyCorner(segWrap, 10)
+    addStroke(segWrap, theme.Stroke, 1)
 
-    local tabList = Instance.new("UIListLayout")
-    tabList.FillDirection = Enum.FillDirection.Horizontal
-    tabList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-    tabList.Padding = UDim.new(0, 8)
-    tabList.Parent = tabBar
+    local segPad = Instance.new("UIPadding")
+    segPad.PaddingLeft = UDim.new(0, 6)
+    segPad.PaddingRight = UDim.new(0, 6)
+    segPad.Parent = segWrap
+
+    local segList = Instance.new("UIListLayout")
+    segList.FillDirection = Enum.FillDirection.Horizontal
+    segList.Padding = UDim.new(0, 6)
+    segList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    segList.VerticalAlignment = Enum.VerticalAlignment.Center
+    segList.Parent = segWrap
+
+    -- Bottom separator
+    local separator = Instance.new("Frame")
+    separator.BackgroundColor3 = theme.Stroke
+    separator.BorderSizePixel = 0
+    separator.Size = UDim2.new(1, 0, 0, 1)
+    separator.Position = UDim2.new(0, 0, 0, 52)
+    separator.Parent = root
 
     local pages = Instance.new("Frame")
     pages.Name = "Pages"
     pages.BackgroundColor3 = theme.Background
     pages.BorderSizePixel = 0
-    pages.Position = UDim2.fromOffset(0, 72)
-    pages.Size = UDim2.new(1, 0, 1, -72)
+    pages.Position = UDim2.fromOffset(0, 53)
+    pages.Size = UDim2.new(1, 0, 1, -53)
     pages.Parent = root
 
     local pageContainerLayout = Instance.new("UIPageLayout")
@@ -259,15 +258,15 @@ function Library:CreateWindow(title, options)
 
     minBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
-        tween(pages, 0.15, {Size = minimized and UDim2.new(1, 0, 0, 0) or UDim2.new(1, 0, 1, -72)}):Play()
-        tween(root, 0.15, {Size = minimized and UDim2.fromOffset(root.AbsoluteSize.X, 72) or originalSize}):Play()
+        tween(pages, 0.15, {Size = minimized and UDim2.new(1, 0, 0, 0) or UDim2.new(1, 0, 1, -53)}):Play()
+        tween(root, 0.15, {Size = minimized and UDim2.fromOffset(root.AbsoluteSize.X, 53) or originalSize}):Play()
     end)
 
     zoomBtn.MouseButton1Click:Connect(function()
         zoomed = not zoomed
         if zoomed then
             originalSize = root.Size
-            tween(root, 0.18, {Size = UDim2.fromOffset(math.max(720, root.AbsoluteSize.X + 120), math.max(520, root.AbsoluteSize.Y + 80))}):Play()
+            tween(root, 0.18, {Size = UDim2.fromOffset(math.max(760, root.AbsoluteSize.X + 140), math.max(560, root.AbsoluteSize.Y + 100))}):Play()
         else
             tween(root, 0.18, {Size = originalSize}):Play()
         end
@@ -286,18 +285,20 @@ function Library:CreateWindow(title, options)
         end
         root.BackgroundColor3 = theme.Background
         titleBar.BackgroundColor3 = theme.Elevated
-        tabBar.BackgroundColor3 = theme.Background
+        segWrap.BackgroundColor3 = theme.Background
+        separator.BackgroundColor3 = theme.Stroke
+        pages.BackgroundColor3 = theme.Background
     end
 
     local currentTabButton = nil
     local function styleTabButton(btn, selected)
         if selected then
             btn.BackgroundTransparency = 0
-            btn.BackgroundColor3 = theme.Elevated:Lerp(theme.Accent, 0.2)
-            btn.TextColor3 = theme.Text
+            btn.BackgroundColor3 = theme.Accent
+            btn.TextColor3 = Color3.fromRGB(255,255,255)
         else
-            btn.BackgroundTransparency = 0
-            btn.BackgroundColor3 = theme.Elevated
+            btn.BackgroundTransparency = 1
+            btn.BackgroundColor3 = theme.Background
             btn.TextColor3 = theme.SubText
         end
     end
@@ -305,16 +306,16 @@ function Library:CreateWindow(title, options)
     function window:AddTab(name)
         local tabButton = Instance.new("TextButton")
         tabButton.Name = name .. "_TabButton"
-        tabButton.BackgroundColor3 = theme.Elevated
         tabButton.Text = name
         tabButton.Font = Enum.Font.Gotham
         tabButton.TextSize = 14
-        tabButton.TextColor3 = theme.SubText
         tabButton.AutoButtonColor = false
-        tabButton.Size = UDim2.fromOffset(120, 28)
-        tabButton.Parent = tabBar
+        tabButton.BackgroundTransparency = 1
+        tabButton.Size = UDim2.fromOffset(120, 24)
+        tabButton.Parent = segWrap
         applyCorner(tabButton, 8)
-        addStroke(tabButton, theme.Stroke, 1)
+        addStroke(tabButton, theme.Stroke, 1).Transparency = 1
+        styleTabButton(tabButton, false)
 
         local page = Instance.new("Frame")
         page.Name = name .. "_Page"
@@ -351,12 +352,12 @@ function Library:CreateWindow(title, options)
 
         tabButton.MouseEnter:Connect(function()
             if currentTabButton ~= tabButton then
-                tween(tabButton, 0.1, {BackgroundColor3 = theme.Elevated:Lerp(theme.Accent, 0.05)}):Play()
+                tween(tabButton, 0.08, {BackgroundTransparency = 0.85}):Play()
             end
         end)
         tabButton.MouseLeave:Connect(function()
             if currentTabButton ~= tabButton then
-                tween(tabButton, 0.12, {BackgroundColor3 = theme.Elevated}):Play()
+                tween(tabButton, 0.1, {BackgroundTransparency = 1}):Play()
             end
         end)
 
@@ -381,7 +382,7 @@ function Library:CreateWindow(title, options)
             vlist.Padding = UDim.new(0, 8)
             vlist.Parent = section
 
-            local header = newText(section, sectionName, 14, theme.SubText, true)
+            local header = newText(section, sectionName, 14, theme.SubText)
             header.Size = UDim2.new(1, 0, 0, 18)
 
             local sectionApi = {}
@@ -424,7 +425,7 @@ function Library:CreateWindow(title, options)
                 row.Size = UDim2.new(1, 0, 0, 32)
                 row.Parent = section
 
-                local text = newText(row, label, 14, theme.Text, false)
+                local text = newText(row, label, 14, theme.Text)
                 text.Size = UDim2.new(1, -60, 1, 0)
 
                 local knob = Instance.new("Frame")
@@ -481,10 +482,10 @@ function Library:CreateWindow(title, options)
                 top.Size = UDim2.new(1, 0, 0, 20)
                 top.Parent = row
 
-                local text = newText(top, label, 14, theme.Text, false)
+                local text = newText(top, label, 14, theme.Text)
                 text.Size = UDim2.new(1, -60, 1, 0)
 
-                local valueText = newText(top, tostring(value), 14, theme.SubText, false)
+                local valueText = newText(top, tostring(value), 14, theme.SubText)
                 valueText.Size = UDim2.new(0, 60, 1, 0)
                 valueText.Position = UDim2.new(1, -60, 0, 0)
                 valueText.TextXAlignment = Enum.TextXAlignment.Right
