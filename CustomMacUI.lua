@@ -50,19 +50,23 @@ local function pickParentGui()
 end
 
 local DefaultTheme = {
-    Background = Color3.fromRGB(30, 30, 32),
-    Elevated = Color3.fromRGB(38, 38, 42),
-    Stroke = Color3.fromRGB(60, 60, 66),
-    Accent = Color3.fromRGB(0, 122, 255),
+    Background = Color3.fromRGB(22, 22, 24),
+    Elevated = Color3.fromRGB(30, 30, 32),
+    Stroke = Color3.fromRGB(58, 58, 62),
+    Accent = Color3.fromRGB(10, 132, 255),
     Text = Color3.fromRGB(235, 235, 240),
-    SubText = Color3.fromRGB(180, 180, 190),
-    Green = Color3.fromRGB(52, 199, 89),
+    SubText = Color3.fromRGB(170, 170, 178),
+    Green = Color3.fromRGB(48, 209, 88),
     Red = Color3.fromRGB(255, 69, 58),
+    Yellow = Color3.fromRGB(255, 214, 10),
+    TrafficRed = Color3.fromRGB(255, 95, 86),
+    TrafficYellow = Color3.fromRGB(255, 189, 46),
+    TrafficGreen = Color3.fromRGB(39, 201, 63),
 }
 
 local function applyCorner(instance, radius)
     local c = Instance.new("UICorner")
-    c.CornerRadius = UDim.new(0, radius or 6)
+    c.CornerRadius = UDim.new(0, radius or 8)
     c.Parent = instance
 end
 
@@ -82,6 +86,22 @@ local function addPadding(container, px)
     p.PaddingLeft = UDim.new(0, px)
     p.PaddingRight = UDim.new(0, px)
     p.Parent = container
+end
+
+local function addShadow(parent)
+    parent.ClipsDescendants = false
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "WindowShadow"
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://5028857472" -- soft drop shadow
+    shadow.ImageTransparency = 0.25
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(24, 24, 276, 276)
+    shadow.ZIndex = 0
+    shadow.Size = UDim2.new(1, 40, 1, 40)
+    shadow.Position = UDim2.fromOffset(-20, -20)
+    shadow.Parent = parent
+    return shadow
 end
 
 local function newText(parent, text, size, color, bold)
@@ -122,22 +142,29 @@ function Library:CreateWindow(title, options)
         SubText = DefaultTheme.SubText,
         Green = DefaultTheme.Green,
         Red = DefaultTheme.Red,
+        Yellow = DefaultTheme.Yellow,
+        TrafficRed = DefaultTheme.TrafficRed,
+        TrafficYellow = DefaultTheme.TrafficYellow,
+        TrafficGreen = DefaultTheme.TrafficGreen,
     }
 
     local gui = Instance.new("ScreenGui")
     gui.Name = "CustomMacUI"
     gui.ResetOnSpawn = false
+    gui.IgnoreGuiInset = true
     gui.Parent = pickParentGui()
 
     local root = Instance.new("Frame")
     root.Name = "Window"
-    root.Size = UDim2.fromOffset((options and options.Size and options.Size.X) or 560, (options and options.Size and options.Size.Y) or 420)
-    root.Position = UDim2.fromScale(0.3, 0.3)
+    root.Size = UDim2.fromOffset((options and options.Size and options.Size.X) or 600, (options and options.Size and options.Size.Y) or 440)
+    root.Position = UDim2.fromScale(0.3, 0.25)
     root.BackgroundColor3 = theme.Background
     root.BorderSizePixel = 0
+    root.ZIndex = 1
     root.Parent = gui
-    applyCorner(root, 10)
+    applyCorner(root, 12)
     addStroke(root, theme.Stroke, 1)
+    addShadow(root)
 
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
@@ -145,46 +172,53 @@ function Library:CreateWindow(title, options)
     titleBar.BorderSizePixel = 0
     titleBar.Size = UDim2.new(1, 0, 0, 36)
     titleBar.Parent = root
-    applyCorner(titleBar, 10)
+    applyCorner(titleBar, 12)
     addStroke(titleBar, theme.Stroke, 1)
     addPadding(titleBar, 8)
 
-    local titleText = newText(titleBar, title or "Window", 16, theme.Text, true)
-    titleText.Size = UDim2.new(1, -120, 1, 0)
-    titleText.Position = UDim2.fromOffset(12, 0)
-    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    -- Traffic lights container (left)
+    local traffic = Instance.new("Frame")
+    traffic.Name = "TrafficLights"
+    traffic.BackgroundTransparency = 1
+    traffic.Size = UDim2.fromOffset(72, 20)
+    traffic.Position = UDim2.fromOffset(10, 8)
+    traffic.Parent = titleBar
 
-    local controls = Instance.new("Frame")
-    controls.Name = "Controls"
-    controls.AnchorPoint = Vector2.new(1, 0.5)
-    controls.Position = UDim2.new(1, -8, 0.5, 0)
-    controls.BackgroundTransparency = 1
-    controls.Size = UDim2.fromOffset(96, 24)
-    controls.Parent = titleBar
+    local layout = Instance.new("UIListLayout")
+    layout.FillDirection = Enum.FillDirection.Horizontal
+    layout.Padding = UDim.new(0, 8)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+    layout.VerticalAlignment = Enum.VerticalAlignment.Center
+    layout.Parent = traffic
 
-    local closeBtn = Instance.new("TextButton")
-    closeBtn.Size = UDim2.fromOffset(24, 24)
-    closeBtn.Position = UDim2.fromOffset(72, 0)
-    closeBtn.Text = "✕"
-    closeBtn.Font = Enum.Font.Gotham
-    closeBtn.TextSize = 14
-    closeBtn.BackgroundColor3 = theme.Red
-    closeBtn.TextColor3 = Color3.new(1,1,1)
-    closeBtn.AutoButtonColor = false
-    applyCorner(closeBtn, 6)
-    closeBtn.Parent = controls
+    local function makeLight(color)
+        local btn = Instance.new("TextButton")
+        btn.BackgroundColor3 = color
+        btn.AutoButtonColor = false
+        btn.Text = ""
+        btn.Size = UDim2.fromOffset(14, 14)
+        btn.BackgroundTransparency = 0
+        btn.Parent = traffic
+        applyCorner(btn, 7)
+        addStroke(btn, Color3.fromRGB(0,0,0), 0.5).Transparency = 0.7
+        btn.MouseEnter:Connect(function()
+            tween(btn, 0.12, {BackgroundTransparency = 0}):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            tween(btn, 0.12, {BackgroundTransparency = 0}):Play()
+        end)
+        return btn
+    end
 
-    local miniBtn = Instance.new("TextButton")
-    miniBtn.Size = UDim2.fromOffset(24, 24)
-    miniBtn.Position = UDim2.fromOffset(40, 0)
-    miniBtn.Text = "–"
-    miniBtn.Font = Enum.Font.Gotham
-    miniBtn.TextSize = 18
-    miniBtn.BackgroundColor3 = theme.Green
-    miniBtn.TextColor3 = Color3.new(1,1,1)
-    miniBtn.AutoButtonColor = false
-    applyCorner(miniBtn, 6)
-    miniBtn.Parent = controls
+    local closeBtn = makeLight(theme.TrafficRed)
+    local minBtn = makeLight(theme.TrafficYellow)
+    local zoomBtn = makeLight(theme.TrafficGreen)
+
+    -- Centered title
+    local titleText = newText(titleBar, title or "Window", 15, theme.Text, true)
+    titleText.Size = UDim2.new(1, -180, 1, 0)
+    titleText.Position = UDim2.fromOffset(90, 0)
+    titleText.TextXAlignment = Enum.TextXAlignment.Center
 
     local tabBar = Instance.new("Frame")
     tabBar.Name = "TabBar"
@@ -220,11 +254,25 @@ function Library:CreateWindow(title, options)
     makeDraggable(root, titleBar)
 
     local minimized = false
-    miniBtn.MouseButton1Click:Connect(function()
+    local zoomed = false
+    local originalSize = root.Size
+
+    minBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
         tween(pages, 0.15, {Size = minimized and UDim2.new(1, 0, 0, 0) or UDim2.new(1, 0, 1, -72)}):Play()
-        tween(root, 0.15, {Size = minimized and UDim2.fromOffset(root.AbsoluteSize.X, 72) or UDim2.fromOffset(root.AbsoluteSize.X, (options and options.Size and options.Size.Y or 420))}):Play()
+        tween(root, 0.15, {Size = minimized and UDim2.fromOffset(root.AbsoluteSize.X, 72) or originalSize}):Play()
     end)
+
+    zoomBtn.MouseButton1Click:Connect(function()
+        zoomed = not zoomed
+        if zoomed then
+            originalSize = root.Size
+            tween(root, 0.18, {Size = UDim2.fromOffset(math.max(720, root.AbsoluteSize.X + 120), math.max(520, root.AbsoluteSize.Y + 80))}):Play()
+        else
+            tween(root, 0.18, {Size = originalSize}):Play()
+        end
+    end)
+
     closeBtn.MouseButton1Click:Connect(function()
         gui:Destroy()
     end)
@@ -241,6 +289,19 @@ function Library:CreateWindow(title, options)
         tabBar.BackgroundColor3 = theme.Background
     end
 
+    local currentTabButton = nil
+    local function styleTabButton(btn, selected)
+        if selected then
+            btn.BackgroundTransparency = 0
+            btn.BackgroundColor3 = theme.Elevated:Lerp(theme.Accent, 0.2)
+            btn.TextColor3 = theme.Text
+        else
+            btn.BackgroundTransparency = 0
+            btn.BackgroundColor3 = theme.Elevated
+            btn.TextColor3 = theme.SubText
+        end
+    end
+
     function window:AddTab(name)
         local tabButton = Instance.new("TextButton")
         tabButton.Name = name .. "_TabButton"
@@ -248,11 +309,11 @@ function Library:CreateWindow(title, options)
         tabButton.Text = name
         tabButton.Font = Enum.Font.Gotham
         tabButton.TextSize = 14
-        tabButton.TextColor3 = theme.Text
+        tabButton.TextColor3 = theme.SubText
         tabButton.AutoButtonColor = false
-        tabButton.Size = UDim2.fromOffset(110, 28)
+        tabButton.Size = UDim2.fromOffset(120, 28)
         tabButton.Parent = tabBar
-        applyCorner(tabButton, 6)
+        applyCorner(tabButton, 8)
         addStroke(tabButton, theme.Stroke, 1)
 
         local page = Instance.new("Frame")
@@ -273,16 +334,30 @@ function Library:CreateWindow(title, options)
         list.Padding = UDim.new(0, 8)
         list.Parent = content
 
-        if not page:IsDescendantOf(pages) then
-            page.Parent = pages
-        end
-
         if #pages:GetChildren() == 1 then
             pageContainerLayout:JumpTo(page)
+            styleTabButton(tabButton, true)
+            currentTabButton = tabButton
         end
 
         tabButton.MouseButton1Click:Connect(function()
             pageContainerLayout:JumpTo(page)
+            if currentTabButton and currentTabButton ~= tabButton then
+                styleTabButton(currentTabButton, false)
+            end
+            styleTabButton(tabButton, true)
+            currentTabButton = tabButton
+        end)
+
+        tabButton.MouseEnter:Connect(function()
+            if currentTabButton ~= tabButton then
+                tween(tabButton, 0.1, {BackgroundColor3 = theme.Elevated:Lerp(theme.Accent, 0.05)}):Play()
+            end
+        end)
+        tabButton.MouseLeave:Connect(function()
+            if currentTabButton ~= tabButton then
+                tween(tabButton, 0.12, {BackgroundColor3 = theme.Elevated}):Play()
+            end
         end)
 
         local tab = {}
@@ -296,14 +371,14 @@ function Library:CreateWindow(title, options)
             section.Size = UDim2.new(1, 0, 0, 56)
             section.AutomaticSize = Enum.AutomaticSize.Y
             section.Parent = content
-            applyCorner(section, 8)
+            applyCorner(section, 10)
             addStroke(section, theme.Stroke, 1)
-            addPadding(section, 10)
+            addPadding(section, 12)
 
             local vlist = Instance.new("UIListLayout")
             vlist.FillDirection = Enum.FillDirection.Vertical
             vlist.SortOrder = Enum.SortOrder.LayoutOrder
-            vlist.Padding = UDim.new(0, 6)
+            vlist.Padding = UDim.new(0, 8)
             vlist.Parent = section
 
             local header = newText(section, sectionName, 14, theme.SubText, true)
@@ -314,28 +389,29 @@ function Library:CreateWindow(title, options)
             function sectionApi:AddButton(text, callback)
                 local row = Instance.new("Frame")
                 row.BackgroundTransparency = 1
-                row.Size = UDim2.new(1, 0, 0, 28)
+                row.Size = UDim2.new(1, 0, 0, 32)
                 row.Parent = section
 
-                local button = newButtonText(row, text, 14, theme.Text)
-                button.Size = UDim2.new(1, 0, 1, 0)
-                button.MouseButton1Click:Connect(function()
-                    if callback then callback() end
-                end)
-
-                local underline = Instance.new("Frame")
-                underline.BackgroundColor3 = theme.Accent
-                underline.BorderSizePixel = 0
-                underline.AnchorPoint = Vector2.new(0,1)
-                underline.Position = UDim2.new(0, 0, 1, 0)
-                underline.Size = UDim2.new(0, 0, 0, 2)
-                underline.Parent = row
+                local button = Instance.new("TextButton")
+                button.Text = text
+                button.Font = Enum.Font.Gotham
+                button.TextSize = 14
+                button.TextColor3 = theme.Text
+                button.AutoButtonColor = false
+                button.Size = UDim2.new(0, 180, 1, 0)
+                button.BackgroundColor3 = theme.Elevated
+                button.Parent = row
+                applyCorner(button, 8)
+                addStroke(button, theme.Stroke, 1)
 
                 button.MouseEnter:Connect(function()
-                    tween(underline, 0.12, {Size = UDim2.new(1, 0, 0, 2)}):Play()
+                    tween(button, 0.12, {BackgroundColor3 = theme.Elevated:Lerp(theme.Accent, 0.08)}):Play()
                 end)
                 button.MouseLeave:Connect(function()
-                    tween(underline, 0.12, {Size = UDim2.new(0, 0, 0, 2)}):Play()
+                    tween(button, 0.12, {BackgroundColor3 = theme.Elevated}):Play()
+                end)
+                button.MouseButton1Click:Connect(function()
+                    if callback then callback() end
                 end)
             end
 
@@ -345,31 +421,31 @@ function Library:CreateWindow(title, options)
 
                 local row = Instance.new("Frame")
                 row.BackgroundTransparency = 1
-                row.Size = UDim2.new(1, 0, 0, 28)
+                row.Size = UDim2.new(1, 0, 0, 32)
                 row.Parent = section
 
                 local text = newText(row, label, 14, theme.Text, false)
-                text.Size = UDim2.new(1, -56, 1, 0)
+                text.Size = UDim2.new(1, -60, 1, 0)
 
                 local knob = Instance.new("Frame")
                 knob.AnchorPoint = Vector2.new(1, 0.5)
                 knob.Position = UDim2.new(1, -4, 0.5, 0)
-                knob.Size = UDim2.fromOffset(44, 22)
+                knob.Size = UDim2.fromOffset(46, 24)
                 knob.BackgroundColor3 = state and theme.Accent or theme.Stroke
                 knob.Parent = row
-                applyCorner(knob, 22)
+                applyCorner(knob, 24)
 
                 local circle = Instance.new("Frame")
-                circle.Size = UDim2.fromOffset(18, 18)
-                circle.Position = state and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2)
+                circle.Size = UDim2.fromOffset(20, 20)
+                circle.Position = state and UDim2.fromOffset(46 - 24, 2) or UDim2.fromOffset(2, 2)
                 circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
                 circle.Parent = knob
-                applyCorner(circle, 18)
+                applyCorner(circle, 20)
 
                 local function setOn(on)
                     state = on
                     tween(knob, 0.12, {BackgroundColor3 = on and theme.Accent or theme.Stroke}):Play()
-                    tween(circle, 0.12, {Position = on and UDim2.fromOffset(22, 2) or UDim2.fromOffset(2, 2)}):Play()
+                    tween(circle, 0.12, {Position = on and UDim2.fromOffset(46 - 24, 2) or UDim2.fromOffset(2, 2)}):Play()
                     changed:Fire(state)
                 end
 
@@ -397,12 +473,12 @@ function Library:CreateWindow(title, options)
 
                 local row = Instance.new("Frame")
                 row.BackgroundTransparency = 1
-                row.Size = UDim2.new(1, 0, 0, 40)
+                row.Size = UDim2.new(1, 0, 0, 48)
                 row.Parent = section
 
                 local top = Instance.new("Frame")
                 top.BackgroundTransparency = 1
-                top.Size = UDim2.new(1, 0, 0, 18)
+                top.Size = UDim2.new(1, 0, 0, 20)
                 top.Parent = row
 
                 local text = newText(top, label, 14, theme.Text, false)
@@ -416,17 +492,17 @@ function Library:CreateWindow(title, options)
                 local bar = Instance.new("Frame")
                 bar.BackgroundColor3 = theme.Stroke
                 bar.BorderSizePixel = 0
-                bar.Size = UDim2.new(1, 0, 0, 6)
-                bar.Position = UDim2.fromOffset(0, 22)
+                bar.Size = UDim2.new(1, 0, 0, 8)
+                bar.Position = UDim2.fromOffset(0, 24)
                 bar.Parent = row
-                applyCorner(bar, 3)
+                applyCorner(bar, 4)
 
                 local fill = Instance.new("Frame")
                 fill.BackgroundColor3 = theme.Accent
                 fill.BorderSizePixel = 0
                 fill.Size = UDim2.new((value - minValue)/(maxValue - minValue), 0, 1, 0)
                 fill.Parent = bar
-                applyCorner(fill, 3)
+                applyCorner(fill, 4)
 
                 local knob = Instance.new("Frame")
                 knob.Size = UDim2.fromOffset(12, 12)
