@@ -40,3 +40,23 @@ end)
 
 ## À venir
 - Dropdown, keybind, textbox, colorpicker, thèmes clairs/sombres, sauvegarde des valeurs.
+
+## Chargement direct (loadstring)
+Pour tester rapidement sans installer le fichier, utilisez:
+
+```lua
+local CustomMacUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/vabalata1/RobloxLib/main/CustomMacUI.lua"))()
+```
+
+Ensuite, créez une fenêtre de test:
+
+```lua
+local win = CustomMacUI:CreateWindow("Test CustomMacUI")
+local tab = win:AddTab("Main")
+local sec = tab:AddSection("Exemples")
+sec:AddButton("Ping", function() print("Ping!") end)
+local t = sec:AddToggle("Auto", false)
+t.Changed:Connect(function(on) print("Auto:", on) end)
+local s = sec:AddSlider("Speed", 16, 0, 100, 1)
+s.Changed:Connect(function(v) print("Speed:", v) end)
+```
